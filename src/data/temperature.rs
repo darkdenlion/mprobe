@@ -5,6 +5,7 @@ pub struct TemperatureData {
     pub sensors: Vec<SensorInfo>,
 }
 
+#[allow(dead_code)]
 pub struct SensorInfo {
     pub label: String,
     pub temperature: f32,

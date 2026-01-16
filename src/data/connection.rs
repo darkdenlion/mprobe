@@ -6,8 +6,6 @@ pub struct ConnectionInfo {
     pub local_addr: String,    // local address:port
     pub remote_addr: String,   // remote address:port (or * for listening)
     pub state: String,         // LISTEN, ESTABLISHED, etc.
-    pub pid: Option<u32>,
-    pub process_name: Option<String>,
 }
 
 #[derive(Default)]
@@ -73,8 +71,6 @@ impl ConnectionData {
                     local_addr: format_macos_addr(&local_addr),
                     remote_addr: format_macos_addr(&remote_addr),
                     state: state.clone(),
-                    pid: None,
-                    process_name: None,
                 };
 
                 if state == "LISTEN" || remote_addr == "*.*" {
@@ -112,20 +108,11 @@ impl ConnectionData {
                 let local_addr = parts[4].to_string();
                 let remote_addr = if parts.len() > 5 { parts[5].to_string() } else { "*:*".to_string() };
 
-                // Try to extract PID and process name
-                let (pid, process_name) = if parts.len() > 6 {
-                    parse_ss_process_info(parts[6])
-                } else {
-                    (None, None)
-                };
-
                 let conn = ConnectionInfo {
                     protocol,
                     local_addr,
                     remote_addr: remote_addr.clone(),
                     state: state.clone(),
-                    pid,
-                    process_name,
                 };
 
                 if state == "LISTEN" {
@@ -154,24 +141,3 @@ fn format_macos_addr(addr: &str) -> String {
     }
 }
 
-#[cfg(target_os = "linux")]
-fn parse_ss_process_info(info: &str) -> (Option<u32>, Option<String>) {
-    // Parse users:(("sshd",pid=1234,fd=3))
-    let mut pid = None;
-    let mut name = None;
-
-    if let Some(start) = info.find("((\"") {
-        if let Some(end) = info[start + 3..].find("\"") {
-            name = Some(info[start + 3..start + 3 + end].to_string());
-        }
-    }
-
-    if let Some(pid_start) = info.find("pid=") {
-        let after_pid = &info[pid_start + 4..];
-        if let Some(pid_end) = after_pid.find(|c: char| !c.is_numeric()) {
-            pid = after_pid[..pid_end].parse().ok();
-        }
-    }
-
-    (pid, name)
-}

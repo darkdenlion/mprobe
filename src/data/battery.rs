@@ -5,7 +5,6 @@ use std::path::Path;
 
 #[derive(Clone)]
 pub struct BatteryInfo {
-    pub name: String,
     pub percentage: f32,
     pub state: BatteryState,
     pub time_to_empty: Option<u64>,  // seconds
@@ -117,7 +116,6 @@ impl BatteryData {
                 };
 
                 self.batteries.push(BatteryInfo {
-                    name: "Battery".to_string(),
                     percentage,
                     state,
                     time_to_empty,
@@ -134,7 +132,6 @@ impl BatteryData {
         if let Ok(entries) = fs::read_dir(power_supply_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                let name = entry.file_name().to_string_lossy().to_string();
 
                 // Check if this is a battery
                 let type_path = path.join("type");
@@ -183,7 +180,6 @@ impl BatteryData {
                 };
 
                 self.batteries.push(BatteryInfo {
-                    name,
                     percentage,
                     state,
                     time_to_empty,

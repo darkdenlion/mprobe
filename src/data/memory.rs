@@ -13,7 +13,6 @@ pub struct MemoryData {
     pub swap_percent: f64,
     // Additional breakdown (where available)
     pub cached: u64,
-    pub buffers: u64,
 }
 
 impl MemoryData {
@@ -56,8 +55,7 @@ impl MemoryData {
             for line in content.lines() {
                 if line.starts_with("Cached:") {
                     self.cached = parse_meminfo_value(line);
-                } else if line.starts_with("Buffers:") {
-                    self.buffers = parse_meminfo_value(line);
+                    break;
                 }
             }
         }
