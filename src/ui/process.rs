@@ -3,7 +3,7 @@ use crate::data::{ProcessData, SortColumn};
 use crate::ui::Theme;
 use ratatui::{
     layout::{Constraint, Rect},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
     Frame,
@@ -101,9 +101,17 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
             theme.fg_muted
         };
 
+        // Create name cell with highlighted filter matches
+        let name_cell = if !app.filter_text.is_empty() {
+            let name = truncate_string(&proc.name, 25);
+            Cell::from(highlight_matches(&name, &app.filter_text, theme.fg, theme.warning))
+        } else {
+            Cell::from(truncate_string(&proc.name, 25)).style(Style::default().fg(theme.fg))
+        };
+
         let cells = vec![
             Cell::from(format!("{:>6}", proc.pid)).style(Style::default().fg(theme.fg_dim)),
-            Cell::from(truncate_string(&proc.name, 25)).style(Style::default().fg(theme.fg)),
+            name_cell,
             Cell::from(format!("{:>6.1}", proc.cpu_usage))
                 .style(Style::default().fg(cpu_color)),
             Cell::from(format!("{:>8}", ProcessData::format_memory(proc.memory)))
@@ -158,4 +166,54 @@ fn format_status(status: &str) -> String {
     } else {
         status.chars().take(7).collect()
     }
+}
+
+/// Highlight matching text in a string
+fn highlight_matches(text: &str, query: &str, normal_color: Color, highlight_color: Color) -> Line<'static> {
+    if query.is_empty() {
+        return Line::from(Span::styled(text.to_string(), Style::default().fg(normal_color)));
+    }
+
+    let query_lower = query.to_lowercase();
+    let text_lower = text.to_lowercase();
+
+    let mut spans: Vec<Span<'static>> = Vec::new();
+    let mut last_end = 0;
+
+    // Find all occurrences of the query in the text (case-insensitive)
+    for (start, _) in text_lower.match_indices(&query_lower) {
+        // Add non-matching part before this match
+        if start > last_end {
+            spans.push(Span::styled(
+                text[last_end..start].to_string(),
+                Style::default().fg(normal_color),
+            ));
+        }
+
+        // Add the matching part with highlight
+        let end = start + query.len();
+        spans.push(Span::styled(
+            text[start..end].to_string(),
+            Style::default()
+                .fg(highlight_color)
+                .add_modifier(Modifier::BOLD),
+        ));
+
+        last_end = end;
+    }
+
+    // Add remaining non-matching part
+    if last_end < text.len() {
+        spans.push(Span::styled(
+            text[last_end..].to_string(),
+            Style::default().fg(normal_color),
+        ));
+    }
+
+    // If no matches found, return the whole text in normal color
+    if spans.is_empty() {
+        spans.push(Span::styled(text.to_string(), Style::default().fg(normal_color)));
+    }
+
+    Line::from(spans)
 }
