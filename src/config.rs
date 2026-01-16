@@ -18,7 +18,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            update_interval: 250,
+            update_interval: 2000,
             no_color: false,
             sort_by: "cpu".to_string(),
             sort_ascending: false,
