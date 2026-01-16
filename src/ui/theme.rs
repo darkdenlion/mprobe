@@ -41,41 +41,41 @@ pub struct Theme {
 impl Default for Theme {
     fn default() -> Self {
         Self {
-            // Modern dark theme with slight blue tint
-            bg: Color::Rgb(13, 17, 23),
-            bg_secondary: Color::Rgb(22, 27, 34),
-            fg: Color::Rgb(230, 237, 243),
-            fg_dim: Color::Rgb(139, 148, 158),
-            fg_muted: Color::Rgb(110, 118, 129),
+            // Adwaita Dark theme
+            bg: Color::Rgb(30, 30, 30),             // #1e1e1e
+            bg_secondary: Color::Rgb(45, 45, 45),   // #2d2d2d
+            fg: Color::Rgb(255, 255, 255),          // #ffffff
+            fg_dim: Color::Rgb(154, 153, 150),      // #9a9996
+            fg_muted: Color::Rgb(119, 118, 123),    // #77767b
 
-            // Cyan/Teal accent (modern and professional)
-            accent: Color::Rgb(88, 166, 255),
+            // Adwaita blue accent
+            accent: Color::Rgb(53, 132, 228),       // #3584e4
 
-            // Subtle borders
-            border: Color::Rgb(48, 54, 61),
+            // Borders
+            border: Color::Rgb(69, 69, 69),         // #454545
 
             // Semantic colors
-            success: Color::Rgb(63, 185, 80),
-            warning: Color::Rgb(210, 153, 34),
+            success: Color::Rgb(51, 209, 122),      // #33d17a
+            warning: Color::Rgb(229, 165, 10),      // #e5a50a
 
-            // Component colors
-            cpu_color: Color::Rgb(88, 166, 255),    // Blue
-            mem_color: Color::Rgb(163, 113, 247),   // Purple
-            swap_color: Color::Rgb(219, 97, 162),   // Pink
-            net_up: Color::Rgb(63, 185, 80),        // Green
-            net_down: Color::Rgb(88, 166, 255),     // Blue
-            disk_color: Color::Rgb(210, 153, 34),   // Yellow/Orange
+            // Component colors (Adwaita palette)
+            cpu_color: Color::Rgb(53, 132, 228),    // #3584e4 Blue
+            mem_color: Color::Rgb(145, 65, 172),    // #9141ac Purple
+            swap_color: Color::Rgb(192, 97, 203),   // #c061cb Pink
+            net_up: Color::Rgb(51, 209, 122),       // #33d17a Green
+            net_down: Color::Rgb(53, 132, 228),     // #3584e4 Blue
+            disk_color: Color::Rgb(255, 120, 0),    // #ff7800 Orange
 
-            // Usage gradient
-            usage_low: Color::Rgb(63, 185, 80),     // Green
-            usage_medium: Color::Rgb(210, 153, 34), // Yellow
-            usage_high: Color::Rgb(219, 97, 162),   // Pink
-            usage_critical: Color::Rgb(248, 81, 73),// Red
+            // Usage gradient (Adwaita colors)
+            usage_low: Color::Rgb(51, 209, 122),    // #33d17a Green
+            usage_medium: Color::Rgb(246, 211, 45), // #f6d32d Yellow
+            usage_high: Color::Rgb(255, 120, 0),    // #ff7800 Orange
+            usage_critical: Color::Rgb(224, 27, 36),// #e01b24 Red
 
             // Table
-            table_header: Color::Rgb(139, 148, 158),
-            table_row_alt: Color::Rgb(22, 27, 34),
-            table_selected: Color::Rgb(33, 38, 45),
+            table_header: Color::Rgb(154, 153, 150),// #9a9996
+            table_row_alt: Color::Rgb(38, 38, 38),  // #262626
+            table_selected: Color::Rgb(53, 53, 53), // #353535
         }
     }
 }
