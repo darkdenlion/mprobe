@@ -5,7 +5,7 @@ mod ui;
 use std::io;
 use std::time::Duration;
 
-use app::App;
+use app::{App, KillSignal};
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
     execute,
@@ -55,6 +55,16 @@ fn run_app(
 
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
+                // Handle kill confirmation mode first
+                if app.kill_confirm.is_some() {
+                    match key.code {
+                        KeyCode::Char('y') | KeyCode::Char('Y') => app.confirm_kill(),
+                        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => app.cancel_kill(),
+                        _ => {}
+                    }
+                    continue;
+                }
+
                 match key.code {
                     KeyCode::Char('q') => return Ok(()),
                     KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
@@ -70,6 +80,8 @@ fn run_app(
                     KeyCode::Char('t') => app.toggle_tree_view(),
                     KeyCode::Char('s') => app.cycle_sort(),
                     KeyCode::Char('r') => app.toggle_sort_order(),
+                    KeyCode::Char('x') => app.initiate_kill(KillSignal::Term),
+                    KeyCode::Char('X') => app.initiate_kill(KillSignal::Kill),
                     KeyCode::Esc => app.clear_filter(),
                     KeyCode::Char(c) if app.filter_mode => app.add_filter_char(c),
                     KeyCode::Backspace if app.filter_mode => app.remove_filter_char(),
@@ -81,6 +93,7 @@ fn run_app(
 
         if last_tick.elapsed() >= tick_rate {
             app.update();
+            app.clear_expired_status();
             last_tick = std::time::Instant::now();
         }
     }

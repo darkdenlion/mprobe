@@ -1,8 +1,14 @@
 use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn, TemperatureData};
-use sysinfo::System;
+use sysinfo::{Signal, System};
 use std::collections::VecDeque;
 
 const GRAPH_HISTORY_SIZE: usize = 120;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum KillSignal {
+    Term,  // SIGTERM - graceful termination
+    Kill,  // SIGKILL - force kill
+}
 
 pub struct App {
     pub system: System,
@@ -27,6 +33,9 @@ pub struct App {
     pub os_name: String,
     pub kernel_version: String,
     pub uptime: u64,
+    // Kill confirmation
+    pub kill_confirm: Option<(u32, String, KillSignal)>,  // (pid, name, signal)
+    pub status_message: Option<(String, std::time::Instant)>,
 }
 
 impl App {
@@ -61,6 +70,8 @@ impl App {
             os_name,
             kernel_version,
             uptime: 0,
+            kill_confirm: None,
+            status_message: None,
         };
 
         // Initialize with zeros
@@ -197,6 +208,61 @@ impl App {
             format!("{}h {}m", hours, minutes)
         } else {
             format!("{}m", minutes)
+        }
+    }
+
+    /// Initiate kill confirmation for the selected process
+    pub fn initiate_kill(&mut self, signal: KillSignal) {
+        if let Some(proc) = self.process_data.processes.get(self.process_scroll) {
+            self.kill_confirm = Some((proc.pid, proc.name.clone(), signal));
+        }
+    }
+
+    /// Confirm and execute the kill
+    pub fn confirm_kill(&mut self) {
+        if let Some((pid, name, signal)) = self.kill_confirm.take() {
+            let sysinfo_signal = match signal {
+                KillSignal::Term => Signal::Term,
+                KillSignal::Kill => Signal::Kill,
+            };
+
+            // Refresh to get the process
+            self.system.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
+
+            let pid = sysinfo::Pid::from_u32(pid);
+            if let Some(process) = self.system.process(pid) {
+                let signal_name = match signal {
+                    KillSignal::Term => "SIGTERM",
+                    KillSignal::Kill => "SIGKILL",
+                };
+
+                if process.kill_with(sysinfo_signal).unwrap_or(false) {
+                    self.set_status(format!("Sent {} to {} ({})", signal_name, name, pid));
+                } else {
+                    self.set_status(format!("Failed to kill {} ({})", name, pid));
+                }
+            } else {
+                self.set_status(format!("Process {} ({}) not found", name, pid));
+            }
+        }
+    }
+
+    /// Cancel kill confirmation
+    pub fn cancel_kill(&mut self) {
+        self.kill_confirm = None;
+    }
+
+    /// Set a status message that will be displayed briefly
+    fn set_status(&mut self, message: String) {
+        self.status_message = Some((message, std::time::Instant::now()));
+    }
+
+    /// Clear expired status messages (after 3 seconds)
+    pub fn clear_expired_status(&mut self) {
+        if let Some((_, timestamp)) = &self.status_message {
+            if timestamp.elapsed().as_secs() >= 3 {
+                self.status_message = None;
+            }
         }
     }
 }
