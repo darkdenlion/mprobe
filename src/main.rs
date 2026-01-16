@@ -10,7 +10,7 @@ use app::{App, KillSignal};
 use clap::Parser;
 use config::Config;
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers, MouseEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -115,52 +115,93 @@ fn run_app(
         let timeout = tick_rate.saturating_sub(last_tick.elapsed());
 
         if event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                // Handle help screen first
-                if app.show_help {
+            match event::read()? {
+                Event::Key(key) => {
+                    // Handle help screen first
+                    if app.show_help {
+                        match key.code {
+                            KeyCode::Char('?') | KeyCode::Esc | KeyCode::Char('q') => {
+                                app.show_help = false;
+                            }
+                            _ => {}
+                        }
+                        continue;
+                    }
+
+                    // Handle kill confirmation mode
+                    if app.kill_confirm.is_some() {
+                        match key.code {
+                            KeyCode::Char('y') | KeyCode::Char('Y') => app.confirm_kill(),
+                            KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => app.cancel_kill(),
+                            _ => {}
+                        }
+                        continue;
+                    }
+
                     match key.code {
-                        KeyCode::Char('?') | KeyCode::Esc | KeyCode::Char('q') => {
+                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                            return Ok(())
+                        }
+                        KeyCode::Char('?') => app.toggle_help(),
+                        KeyCode::Tab => app.next_tab(),
+                        KeyCode::BackTab => app.prev_tab(),
+                        KeyCode::Up | KeyCode::Char('k') => app.scroll_up(),
+                        KeyCode::Down | KeyCode::Char('j') => app.scroll_down(),
+                        KeyCode::Char('g') => app.scroll_to_top(),
+                        KeyCode::Char('G') => app.scroll_to_bottom(),
+                        KeyCode::Char('/') => app.toggle_filter_mode(),
+                        KeyCode::Char('t') => app.toggle_tree_view(),
+                        KeyCode::Char('s') => app.cycle_sort(),
+                        KeyCode::Char('r') => app.toggle_sort_order(),
+                        KeyCode::Char('x') => app.initiate_kill(KillSignal::Term),
+                        KeyCode::Char('X') => app.initiate_kill(KillSignal::Kill),
+                        KeyCode::Esc => app.clear_filter(),
+                        KeyCode::Char(c) if app.filter_mode => app.add_filter_char(c),
+                        KeyCode::Backspace if app.filter_mode => app.remove_filter_char(),
+                        KeyCode::Enter if app.filter_mode => app.toggle_filter_mode(),
+                        _ => {}
+                    }
+                }
+                Event::Mouse(mouse) => {
+                    // Close dialogs on any click
+                    if app.show_help || app.kill_confirm.is_some() {
+                        if matches!(mouse.kind, MouseEventKind::Down(_)) {
                             app.show_help = false;
+                            app.cancel_kill();
+                        }
+                        continue;
+                    }
+
+                    match mouse.kind {
+                        MouseEventKind::ScrollUp => {
+                            // Scroll up 3 lines at a time for faster scrolling
+                            for _ in 0..3 {
+                                app.scroll_up();
+                            }
+                        }
+                        MouseEventKind::ScrollDown => {
+                            // Scroll down 3 lines at a time for faster scrolling
+                            for _ in 0..3 {
+                                app.scroll_down();
+                            }
+                        }
+                        MouseEventKind::Down(_) => {
+                            // Click to select process in the process list area
+                            // Process list starts after header (5) + top row (11) + bottom row (9) = 25 lines
+                            // Plus 1 for the table header row
+                            let process_area_start = 26u16;
+                            if mouse.row >= process_area_start {
+                                let clicked_row = (mouse.row - process_area_start) as usize;
+                                if clicked_row < app.process_data.processes.len() {
+                                    app.process_scroll = clicked_row;
+                                }
+                            }
                         }
                         _ => {}
                     }
-                    continue;
                 }
-
-                // Handle kill confirmation mode
-                if app.kill_confirm.is_some() {
-                    match key.code {
-                        KeyCode::Char('y') | KeyCode::Char('Y') => app.confirm_kill(),
-                        KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => app.cancel_kill(),
-                        _ => {}
-                    }
-                    continue;
-                }
-
-                match key.code {
-                    KeyCode::Char('q') => return Ok(()),
-                    KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                        return Ok(())
-                    }
-                    KeyCode::Char('?') => app.toggle_help(),
-                    KeyCode::Tab => app.next_tab(),
-                    KeyCode::BackTab => app.prev_tab(),
-                    KeyCode::Up | KeyCode::Char('k') => app.scroll_up(),
-                    KeyCode::Down | KeyCode::Char('j') => app.scroll_down(),
-                    KeyCode::Char('g') => app.scroll_to_top(),
-                    KeyCode::Char('G') => app.scroll_to_bottom(),
-                    KeyCode::Char('/') => app.toggle_filter_mode(),
-                    KeyCode::Char('t') => app.toggle_tree_view(),
-                    KeyCode::Char('s') => app.cycle_sort(),
-                    KeyCode::Char('r') => app.toggle_sort_order(),
-                    KeyCode::Char('x') => app.initiate_kill(KillSignal::Term),
-                    KeyCode::Char('X') => app.initiate_kill(KillSignal::Kill),
-                    KeyCode::Esc => app.clear_filter(),
-                    KeyCode::Char(c) if app.filter_mode => app.add_filter_char(c),
-                    KeyCode::Backspace if app.filter_mode => app.remove_filter_char(),
-                    KeyCode::Enter if app.filter_mode => app.toggle_filter_mode(),
-                    _ => {}
-                }
+                _ => {}
             }
         }
 
