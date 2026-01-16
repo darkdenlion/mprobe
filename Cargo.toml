@@ -1,0 +1,19 @@
+[package]
+name = "sysmon"
+version = "0.1.0"
+edition = "2021"
+description = "A beautiful system monitor inspired by btop"
+
+[dependencies]
+ratatui = "0.29"
+crossterm = { version = "0.28", features = ["event-stream"] }
+sysinfo = "0.32"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+unicode-width = "0.2"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
