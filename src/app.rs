@@ -1,4 +1,4 @@
-use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn};
+use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn, TemperatureData};
 use sysinfo::System;
 use std::collections::VecDeque;
 
@@ -11,6 +11,7 @@ pub struct App {
     pub memory_data: MemoryData,
     pub network_data: NetworkData,
     pub process_data: ProcessData,
+    pub temperature_data: TemperatureData,
     pub cpu_history: VecDeque<f64>,
     pub mem_history: VecDeque<f64>,
     pub net_up_history: VecDeque<u64>,
@@ -44,6 +45,7 @@ impl App {
             memory_data: MemoryData::default(),
             network_data: NetworkData::default(),
             process_data: ProcessData::default(),
+            temperature_data: TemperatureData::default(),
             cpu_history: VecDeque::with_capacity(GRAPH_HISTORY_SIZE),
             mem_history: VecDeque::with_capacity(GRAPH_HISTORY_SIZE),
             net_up_history: VecDeque::with_capacity(GRAPH_HISTORY_SIZE),
@@ -93,6 +95,9 @@ impl App {
 
         // Update Disk data
         self.disk_data.update();
+
+        // Update Temperature data
+        self.temperature_data.update();
 
         // Update Network data
         let (up, down) = self.network_data.update(&self.system);

@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::data::TemperatureData;
 use crate::ui::Theme;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -31,47 +32,63 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Min(3), // System info
-            Constraint::Length(2), // Keyboard shortcuts
+            Constraint::Min(3), // System info + temps
+            Constraint::Length(1), // Keyboard shortcuts hint
         ])
         .split(inner);
 
-    // System information
-    let cpu_name = if app.cpu_data.cpu_name.len() > 30 {
-        format!("{}...", &app.cpu_data.cpu_name[..27])
-    } else {
-        app.cpu_data.cpu_name.clone()
-    };
+    // Build system info lines
+    let mut lines: Vec<Line> = Vec::new();
 
-    let info = Paragraph::new(vec![
-        Line::from(vec![
-            Span::styled("CPU  ", Style::default().fg(theme.fg_muted)),
-            Span::styled(&cpu_name, Style::default().fg(theme.fg_dim)),
-        ]),
-        Line::from(vec![
-            Span::styled("OS   ", Style::default().fg(theme.fg_muted)),
-            Span::styled(
-                format!("{} {}", app.os_name, app.kernel_version),
-                Style::default().fg(theme.fg_dim),
-            ),
-        ]),
-        Line::from(vec![
-            Span::styled("Host ", Style::default().fg(theme.fg_muted)),
-            Span::styled(&app.hostname, Style::default().fg(theme.fg_dim)),
-        ]),
-    ]);
+    // Uptime
+    lines.push(Line::from(vec![
+        Span::styled("Up   ", Style::default().fg(theme.fg_muted)),
+        Span::styled(app.format_uptime(), Style::default().fg(theme.fg_dim)),
+    ]));
+
+    // Host
+    lines.push(Line::from(vec![
+        Span::styled("Host ", Style::default().fg(theme.fg_muted)),
+        Span::styled(&app.hostname, Style::default().fg(theme.fg_dim)),
+    ]));
+
+    // Temperature sensors (show top 2 if available)
+    if !app.temperature_data.sensors.is_empty() {
+        for sensor in app.temperature_data.sensors.iter().take(2) {
+            let temp_color = get_temp_color(sensor.temperature, sensor.critical, theme);
+            let label = if sensor.label.len() > 8 {
+                format!("{}.", &sensor.label[..7])
+            } else {
+                format!("{:4}", sensor.label)
+            };
+
+            lines.push(Line::from(vec![
+                Span::styled(format!("{} ", label), Style::default().fg(theme.fg_muted)),
+                Span::styled(
+                    format!("{:.0}°C", sensor.temperature),
+                    Style::default().fg(temp_color).add_modifier(Modifier::BOLD),
+                ),
+            ]));
+        }
+    }
+
+    let info = Paragraph::new(lines);
     frame.render_widget(info, chunks[0]);
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts hint
     let shortcuts = Line::from(vec![
-        Span::styled("q", Style::default().fg(theme.accent)),
-        Span::styled(" quit ", Style::default().fg(theme.fg_muted)),
-        Span::styled("/", Style::default().fg(theme.accent)),
-        Span::styled(" filter ", Style::default().fg(theme.fg_muted)),
-        Span::styled("s", Style::default().fg(theme.accent)),
-        Span::styled(" sort ", Style::default().fg(theme.fg_muted)),
-        Span::styled("r", Style::default().fg(theme.accent)),
-        Span::styled(" reverse", Style::default().fg(theme.fg_muted)),
+        Span::styled("?", Style::default().fg(theme.accent)),
+        Span::styled(" help", Style::default().fg(theme.fg_muted)),
     ]);
     frame.render_widget(Paragraph::new(shortcuts), chunks[1]);
+}
+
+fn get_temp_color(temp: f32, critical: Option<f32>, theme: &Theme) -> ratatui::style::Color {
+    let idx = TemperatureData::get_temp_color_index(temp, critical);
+    match idx {
+        0 => theme.usage_low,
+        1 => theme.usage_medium,
+        2 => theme.usage_high,
+        _ => theme.usage_critical,
+    }
 }
