@@ -1,4 +1,5 @@
 mod app;
+mod config;
 mod data;
 mod ui;
 
@@ -7,6 +8,7 @@ use std::time::Duration;
 
 use app::{App, KillSignal};
 use clap::Parser;
+use config::Config;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
     execute,
@@ -20,16 +22,55 @@ use ratatui::{backend::CrosstermBackend, Terminal};
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Update interval in milliseconds
-    #[arg(short = 'i', long, default_value = "250", value_name = "MS")]
-    update_interval: u64,
+    #[arg(short = 'i', long, value_name = "MS")]
+    update_interval: Option<u64>,
 
     /// Disable colors (use default terminal colors)
     #[arg(long)]
     no_color: bool,
+
+    /// Generate default config file at ~/.config/mprobe/config.toml
+    #[arg(long)]
+    generate_config: bool,
+
+    /// Show config file path
+    #[arg(long)]
+    config_path: bool,
 }
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
+
+    // Handle --config-path flag
+    if args.config_path {
+        match Config::config_path() {
+            Some(path) => println!("{}", path.display()),
+            None => eprintln!("Could not determine config directory"),
+        }
+        return Ok(());
+    }
+
+    // Handle --generate-config flag
+    if args.generate_config {
+        match Config::config_path() {
+            Some(path) => {
+                let config = Config::default();
+                match config.save() {
+                    Ok(()) => println!("Config file created at: {}", path.display()),
+                    Err(e) => eprintln!("Error: {}", e),
+                }
+            }
+            None => eprintln!("Could not determine config directory"),
+        }
+        return Ok(());
+    }
+
+    // Load config from file
+    let config = Config::load();
+
+    // CLI args override config file
+    let update_interval = args.update_interval.unwrap_or(config.update_interval);
+    let no_color = args.no_color || config.no_color;
 
     // Setup terminal
     enable_raw_mode()?;
@@ -40,8 +81,9 @@ fn main() -> io::Result<()> {
 
     // Create app and run
     let mut app = App::new();
-    app.no_color = args.no_color;
-    let res = run_app(&mut terminal, &mut app, args.update_interval);
+    app.no_color = no_color;
+    app.apply_config(&config);
+    let res = run_app(&mut terminal, &mut app, update_interval);
 
     // Restore terminal
     disable_raw_mode()?;

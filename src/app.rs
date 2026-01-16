@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn, TemperatureData};
 use sysinfo::{Signal, System};
 use std::collections::VecDeque;
@@ -275,5 +276,18 @@ impl App {
     /// Toggle help screen
     pub fn toggle_help(&mut self) {
         self.show_help = !self.show_help;
+    }
+
+    /// Apply settings from config file
+    pub fn apply_config(&mut self, config: &Config) {
+        // Apply sort column
+        self.sort_column = match config.sort_by.to_lowercase().as_str() {
+            "pid" => SortColumn::Pid,
+            "name" => SortColumn::Name,
+            "cpu" => SortColumn::Cpu,
+            "memory" | "mem" => SortColumn::Memory,
+            _ => SortColumn::Cpu,
+        };
+        self.sort_ascending = config.sort_ascending;
     }
 }
