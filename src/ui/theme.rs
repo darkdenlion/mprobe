@@ -41,9 +41,11 @@ pub struct Theme {
 impl Default for Theme {
     fn default() -> Self {
         Self {
-            // Adwaita Dark theme
-            bg: Color::Rgb(30, 30, 30),             // #1e1e1e
-            bg_secondary: Color::Rgb(45, 45, 45),   // #2d2d2d
+            // Transparent backgrounds (uses terminal background)
+            bg: Color::Reset,
+            bg_secondary: Color::Reset,
+
+            // Adwaita Dark foreground colors
             fg: Color::Rgb(255, 255, 255),          // #ffffff
             fg_dim: Color::Rgb(154, 153, 150),      // #9a9996
             fg_muted: Color::Rgb(119, 118, 123),    // #77767b
@@ -51,8 +53,8 @@ impl Default for Theme {
             // Adwaita blue accent
             accent: Color::Rgb(53, 132, 228),       // #3584e4
 
-            // Borders
-            border: Color::Rgb(69, 69, 69),         // #454545
+            // Borders - slightly brighter for visibility
+            border: Color::Rgb(99, 99, 99),         // #636363
 
             // Semantic colors
             success: Color::Rgb(51, 209, 122),      // #33d17a
@@ -72,10 +74,10 @@ impl Default for Theme {
             usage_high: Color::Rgb(255, 120, 0),    // #ff7800 Orange
             usage_critical: Color::Rgb(224, 27, 36),// #e01b24 Red
 
-            // Table
+            // Table - transparent with subtle selection
             table_header: Color::Rgb(154, 153, 150),// #9a9996
-            table_row_alt: Color::Rgb(38, 38, 38),  // #262626
-            table_selected: Color::Rgb(53, 53, 53), // #353535
+            table_row_alt: Color::Reset,            // Transparent
+            table_selected: Color::Rgb(53, 132, 228),// #3584e4 Blue accent for selection
         }
     }
 }
