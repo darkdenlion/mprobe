@@ -55,7 +55,18 @@ fn run_app(
 
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
-                // Handle kill confirmation mode first
+                // Handle help screen first
+                if app.show_help {
+                    match key.code {
+                        KeyCode::Char('?') | KeyCode::Esc | KeyCode::Char('q') => {
+                            app.show_help = false;
+                        }
+                        _ => {}
+                    }
+                    continue;
+                }
+
+                // Handle kill confirmation mode
                 if app.kill_confirm.is_some() {
                     match key.code {
                         KeyCode::Char('y') | KeyCode::Char('Y') => app.confirm_kill(),
@@ -70,6 +81,7 @@ fn run_app(
                     KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                         return Ok(())
                     }
+                    KeyCode::Char('?') => app.toggle_help(),
                     KeyCode::Tab => app.next_tab(),
                     KeyCode::BackTab => app.prev_tab(),
                     KeyCode::Up | KeyCode::Char('k') => app.scroll_up(),

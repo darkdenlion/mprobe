@@ -83,6 +83,11 @@ pub fn draw(frame: &mut Frame, app: &App) {
     if let Some((message, _)) = &app.status_message {
         draw_status_message(frame, message, &theme);
     }
+
+    // Draw help screen if active
+    if app.show_help {
+        draw_help_screen(frame, &theme);
+    }
 }
 
 fn draw_kill_dialog(frame: &mut Frame, pid: u32, name: &str, signal: KillSignal, theme: &Theme) {
@@ -181,4 +186,88 @@ fn draw_status_message(frame: &mut Frame, message: &str, theme: &Theme) {
     .block(block);
 
     frame.render_widget(content, msg_area);
+}
+
+fn draw_help_screen(frame: &mut Frame, theme: &Theme) {
+    let area = frame.area();
+
+    // Calculate help dialog size (centered, takes most of the screen)
+    let help_width = 60u16.min(area.width.saturating_sub(4));
+    let help_height = 24u16.min(area.height.saturating_sub(4));
+    let help_x = (area.width.saturating_sub(help_width)) / 2;
+    let help_y = (area.height.saturating_sub(help_height)) / 2;
+
+    let help_area = Rect::new(help_x, help_y, help_width, help_height);
+
+    // Clear the area behind the dialog
+    frame.render_widget(Clear, help_area);
+
+    let block = Block::default()
+        .title(Line::from(vec![
+            Span::styled(" ", Style::default()),
+            Span::styled(
+                "Keyboard Shortcuts",
+                Style::default().fg(theme.accent).add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(" ", Style::default()),
+        ]))
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(theme.accent))
+        .style(Style::default().bg(theme.bg_secondary));
+
+    let keybindings = vec![
+        ("General", vec![
+            ("q, Ctrl+c", "Quit application"),
+            ("?", "Toggle this help screen"),
+        ]),
+        ("Navigation", vec![
+            ("j, Down", "Move down in process list"),
+            ("k, Up", "Move up in process list"),
+            ("g", "Go to top of list"),
+            ("G", "Go to bottom of list"),
+            ("Tab", "Next tab"),
+            ("Shift+Tab", "Previous tab"),
+        ]),
+        ("Process Management", vec![
+            ("/", "Start filtering processes"),
+            ("Esc", "Clear filter / Cancel"),
+            ("s", "Cycle sort column"),
+            ("r", "Reverse sort order"),
+            ("t", "Toggle tree view"),
+            ("x", "Kill process (SIGTERM)"),
+            ("X", "Force kill process (SIGKILL)"),
+        ]),
+    ];
+
+    let mut lines: Vec<Line> = vec![Line::from("")];
+
+    for (section, bindings) in keybindings {
+        lines.push(Line::from(vec![
+            Span::styled(
+                format!("  {}", section),
+                Style::default().fg(theme.warning).add_modifier(Modifier::BOLD),
+            ),
+        ]));
+
+        for (key, desc) in bindings {
+            lines.push(Line::from(vec![
+                Span::styled(format!("    {:14}", key), Style::default().fg(theme.accent)),
+                Span::styled(desc, Style::default().fg(theme.fg_dim)),
+            ]));
+        }
+
+        lines.push(Line::from(""));
+    }
+
+    lines.push(Line::from(vec![
+        Span::styled("  Press ", Style::default().fg(theme.fg_muted)),
+        Span::styled("?", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
+        Span::styled(" or ", Style::default().fg(theme.fg_muted)),
+        Span::styled("Esc", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
+        Span::styled(" to close", Style::default().fg(theme.fg_muted)),
+    ]));
+
+    let content = Paragraph::new(lines).block(block);
+
+    frame.render_widget(content, help_area);
 }

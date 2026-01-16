@@ -36,6 +36,8 @@ pub struct App {
     // Kill confirmation
     pub kill_confirm: Option<(u32, String, KillSignal)>,  // (pid, name, signal)
     pub status_message: Option<(String, std::time::Instant)>,
+    // Help screen
+    pub show_help: bool,
 }
 
 impl App {
@@ -72,6 +74,7 @@ impl App {
             uptime: 0,
             kill_confirm: None,
             status_message: None,
+            show_help: false,
         };
 
         // Initialize with zeros
@@ -264,5 +267,10 @@ impl App {
                 self.status_message = None;
             }
         }
+    }
+
+    /// Toggle help screen
+    pub fn toggle_help(&mut self) {
+        self.show_help = !self.show_help;
     }
 }
