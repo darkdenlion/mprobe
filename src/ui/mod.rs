@@ -1,4 +1,5 @@
 mod cpu;
+mod disk;
 mod header;
 mod memory;
 mod network;
@@ -55,17 +56,19 @@ pub fn draw(frame: &mut Frame, app: &App) {
     cpu::draw(frame, app, top_row[0], &theme);
     memory::draw(frame, app, top_row[1], &theme);
 
-    // Bottom row: Network | System Info
+    // Bottom row: Network | Disk | System Info
     let bottom_row = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
+            Constraint::Percentage(33),
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
         ])
         .split(main_chunks[2]);
 
     network::draw(frame, app, bottom_row[0], &theme);
-    system_info::draw(frame, app, bottom_row[1], &theme);
+    disk::draw(frame, app, bottom_row[1], &theme);
+    system_info::draw(frame, app, bottom_row[2], &theme);
 
     // Processes (full width)
     process::draw(frame, app, main_chunks[3], &theme);

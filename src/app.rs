@@ -1,4 +1,4 @@
-use crate::data::{CpuData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn};
+use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn};
 use sysinfo::System;
 use std::collections::VecDeque;
 
@@ -7,6 +7,7 @@ const GRAPH_HISTORY_SIZE: usize = 120;
 pub struct App {
     pub system: System,
     pub cpu_data: CpuData,
+    pub disk_data: DiskData,
     pub memory_data: MemoryData,
     pub network_data: NetworkData,
     pub process_data: ProcessData,
@@ -39,6 +40,7 @@ impl App {
         let mut app = Self {
             system,
             cpu_data: CpuData::default(),
+            disk_data: DiskData::default(),
             memory_data: MemoryData::default(),
             network_data: NetworkData::default(),
             process_data: ProcessData::default(),
@@ -88,6 +90,9 @@ impl App {
             self.mem_history.pop_front();
         }
         self.mem_history.push_back(self.memory_data.used_percent);
+
+        // Update Disk data
+        self.disk_data.update();
 
         // Update Network data
         let (up, down) = self.network_data.update(&self.system);

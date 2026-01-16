@@ -378,6 +378,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mprobe"
+version = "0.1.0"
+dependencies = [
+ "crossterm",
+ "futures",
+ "ratatui",
+ "sysinfo",
+ "tokio",
+ "unicode-width 0.2.0",
+]
+
+[[package]]
 name = "ntapi"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -636,18 +648,6 @@ dependencies = [
  "ntapi",
  "rayon",
  "windows",
-]
-
-[[package]]
-name = "sysmon"
-version = "0.1.0"
-dependencies = [
- "crossterm",
- "futures",
- "ratatui",
- "sysinfo",
- "tokio",
- "unicode-width 0.2.0",
 ]
 
 [[package]]
