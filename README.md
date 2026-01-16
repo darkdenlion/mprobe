@@ -1,4 +1,4 @@
-# sysmon
+# mprobe
 
 A beautiful terminal-based system monitor written in Rust, inspired by [btop](https://github.com/aristocratos/btop).
 
@@ -15,19 +15,19 @@ A beautiful terminal-based system monitor written in Rust, inspired by [btop](ht
 ### From source
 
 ```bash
-git clone https://github.com/darkdenlion/sysmon.git
-cd sysmon
+git clone https://github.com/darkdenlion/mprobe.git
+cd mprobe
 cargo build --release
 ```
 
-The binary will be available at `target/release/sysmon`.
+The binary will be available at `target/release/mprobe`.
 
 ## Usage
 
 ```bash
-./target/release/sysmon
+./target/release/mprobe
 # or if installed to PATH
-sysmon
+mprobe
 ```
 
 ## Keybindings
