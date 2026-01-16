@@ -6,6 +6,7 @@ use std::io;
 use std::time::Duration;
 
 use app::{App, KillSignal};
+use clap::Parser;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyModifiers},
     execute,
@@ -13,7 +14,23 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 
+/// A beautiful terminal-based system monitor
+#[derive(Parser, Debug)]
+#[command(name = "mprobe")]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Update interval in milliseconds
+    #[arg(short = 'i', long, default_value = "250", value_name = "MS")]
+    update_interval: u64,
+
+    /// Disable colors (use default terminal colors)
+    #[arg(long)]
+    no_color: bool,
+}
+
 fn main() -> io::Result<()> {
+    let args = Args::parse();
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -23,7 +40,8 @@ fn main() -> io::Result<()> {
 
     // Create app and run
     let mut app = App::new();
-    let res = run_app(&mut terminal, &mut app);
+    app.no_color = args.no_color;
+    let res = run_app(&mut terminal, &mut app, args.update_interval);
 
     // Restore terminal
     disable_raw_mode()?;
@@ -44,8 +62,9 @@ fn main() -> io::Result<()> {
 fn run_app(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     app: &mut App,
+    update_interval: u64,
 ) -> io::Result<()> {
-    let tick_rate = Duration::from_millis(250);
+    let tick_rate = Duration::from_millis(update_interval);
     let mut last_tick = std::time::Instant::now();
 
     loop {

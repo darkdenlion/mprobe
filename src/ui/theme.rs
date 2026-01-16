@@ -81,6 +81,34 @@ impl Default for Theme {
 }
 
 impl Theme {
+    /// Create a plain theme using terminal default colors
+    pub fn plain() -> Self {
+        Self {
+            bg: Color::Reset,
+            bg_secondary: Color::Reset,
+            fg: Color::Reset,
+            fg_dim: Color::DarkGray,
+            fg_muted: Color::DarkGray,
+            accent: Color::Cyan,
+            border: Color::DarkGray,
+            success: Color::Green,
+            warning: Color::Yellow,
+            cpu_color: Color::Cyan,
+            mem_color: Color::Magenta,
+            swap_color: Color::LightMagenta,
+            net_up: Color::Green,
+            net_down: Color::Cyan,
+            disk_color: Color::Yellow,
+            usage_low: Color::Green,
+            usage_medium: Color::Yellow,
+            usage_high: Color::LightRed,
+            usage_critical: Color::Red,
+            table_header: Color::DarkGray,
+            table_row_alt: Color::Reset,
+            table_selected: Color::DarkGray,
+        }
+    }
+
     pub fn get_usage_color(&self, percent: f64) -> Color {
         match percent {
             x if x < 50.0 => self.usage_low,

@@ -38,6 +38,8 @@ pub struct App {
     pub status_message: Option<(String, std::time::Instant)>,
     // Help screen
     pub show_help: bool,
+    // CLI options
+    pub no_color: bool,
 }
 
 impl App {
@@ -75,6 +77,7 @@ impl App {
             kill_confirm: None,
             status_message: None,
             show_help: false,
+            no_color: false,
         };
 
         // Initialize with zeros

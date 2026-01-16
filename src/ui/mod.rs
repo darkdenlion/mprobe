@@ -19,7 +19,11 @@ use ratatui::{
 pub use theme::Theme;
 
 pub fn draw(frame: &mut Frame, app: &App) {
-    let theme = Theme::default();
+    let theme = if app.no_color {
+        Theme::plain()
+    } else {
+        Theme::default()
+    };
 
     // Draw background
     let bg_block = Block::default().style(Style::default().bg(theme.bg));
