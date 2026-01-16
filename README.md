@@ -15,7 +15,7 @@ A beautiful terminal-based system monitor written in Rust, inspired by [btop](ht
 ### From source
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/sysmon.git
+git clone https://github.com/darkdenlion/sysmon.git
 cd sysmon
 cargo build --release
 ```
