@@ -6,13 +6,10 @@ pub struct DiskData {
 }
 
 pub struct DiskInfo {
-    pub name: String,
     pub mount_point: String,
     pub total: u64,
     pub used: u64,
-    pub available: u64,
     pub used_percent: f64,
-    pub fs_type: String,
 }
 
 impl Default for DiskData {
@@ -39,21 +36,11 @@ impl DiskData {
                 0.0
             };
 
-            let name = disk.name().to_string_lossy().to_string();
-            let display_name = if name.is_empty() {
-                disk.mount_point().to_string_lossy().to_string()
-            } else {
-                name
-            };
-
             self.disk_info.push(DiskInfo {
-                name: display_name,
                 mount_point: disk.mount_point().to_string_lossy().to_string(),
                 total,
                 used,
-                available,
                 used_percent,
-                fs_type: disk.file_system().to_string_lossy().to_string(),
             });
         }
 

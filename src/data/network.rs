@@ -9,15 +9,6 @@ pub struct NetworkData {
     pub total_transmitted: u64,
     pub speed_down: u64,
     pub speed_up: u64,
-    pub interfaces: Vec<NetworkInterface>,
-}
-
-pub struct NetworkInterface {
-    pub name: String,
-    pub received: u64,
-    pub transmitted: u64,
-    pub speed_down: u64,
-    pub speed_up: u64,
 }
 
 impl Default for NetworkData {
@@ -30,7 +21,6 @@ impl Default for NetworkData {
             total_transmitted: 0,
             speed_down: 0,
             speed_up: 0,
-            interfaces: Vec::new(),
         }
     }
 }
@@ -43,8 +33,6 @@ impl NetworkData {
         let mut total_up: u64 = 0;
         let mut new_total_received: u64 = 0;
         let mut new_total_transmitted: u64 = 0;
-
-        self.interfaces.clear();
 
         for (name, data) in self.networks.iter() {
             let received = data.total_received();
@@ -64,17 +52,6 @@ impl NetworkData {
 
             self.prev_received.insert(name.clone(), received);
             self.prev_transmitted.insert(name.clone(), transmitted);
-
-            // Only include active interfaces
-            if received > 0 || transmitted > 0 {
-                self.interfaces.push(NetworkInterface {
-                    name: name.clone(),
-                    received,
-                    transmitted,
-                    speed_down,
-                    speed_up,
-                });
-            }
         }
 
         self.total_received = new_total_received;
@@ -83,21 +60,5 @@ impl NetworkData {
         self.speed_up = total_up * 4;
 
         (self.speed_up, self.speed_down)
-    }
-
-    pub fn format_speed(bytes_per_sec: u64) -> String {
-        const KB: u64 = 1024;
-        const MB: u64 = KB * 1024;
-        const GB: u64 = MB * 1024;
-
-        if bytes_per_sec >= GB {
-            format!("{:.1} GB/s", bytes_per_sec as f64 / GB as f64)
-        } else if bytes_per_sec >= MB {
-            format!("{:.1} MB/s", bytes_per_sec as f64 / MB as f64)
-        } else if bytes_per_sec >= KB {
-            format!("{:.1} KB/s", bytes_per_sec as f64 / KB as f64)
-        } else {
-            format!("{} B/s", bytes_per_sec)
-        }
     }
 }

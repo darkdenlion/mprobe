@@ -27,13 +27,4 @@ impl CpuData {
         // Per-core usage
         self.per_core_usage = cpus.iter().map(|cpu| cpu.cpu_usage() as f64).collect();
     }
-
-    pub fn get_usage_color_index(&self) -> usize {
-        match self.total_usage {
-            x if x < 30.0 => 0, // Green
-            x if x < 60.0 => 1, // Yellow
-            x if x < 85.0 => 2, // Orange
-            _ => 3,             // Red
-        }
-    }
 }

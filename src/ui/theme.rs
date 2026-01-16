@@ -4,24 +4,19 @@ pub struct Theme {
     // Base colors
     pub bg: Color,
     pub bg_secondary: Color,
-    pub bg_highlight: Color,
     pub fg: Color,
     pub fg_dim: Color,
     pub fg_muted: Color,
 
     // Accent colors
     pub accent: Color,
-    pub accent_secondary: Color,
 
     // Border colors
     pub border: Color,
-    pub border_focused: Color,
 
     // Semantic colors
     pub success: Color,
     pub warning: Color,
-    pub error: Color,
-    pub info: Color,
 
     // Component specific
     pub cpu_color: Color,
@@ -49,24 +44,19 @@ impl Default for Theme {
             // Modern dark theme with slight blue tint
             bg: Color::Rgb(13, 17, 23),
             bg_secondary: Color::Rgb(22, 27, 34),
-            bg_highlight: Color::Rgb(33, 38, 45),
             fg: Color::Rgb(230, 237, 243),
             fg_dim: Color::Rgb(139, 148, 158),
             fg_muted: Color::Rgb(110, 118, 129),
 
             // Cyan/Teal accent (modern and professional)
             accent: Color::Rgb(88, 166, 255),
-            accent_secondary: Color::Rgb(56, 139, 253),
 
             // Subtle borders
             border: Color::Rgb(48, 54, 61),
-            border_focused: Color::Rgb(88, 166, 255),
 
             // Semantic colors
             success: Color::Rgb(63, 185, 80),
             warning: Color::Rgb(210, 153, 34),
-            error: Color::Rgb(248, 81, 73),
-            info: Color::Rgb(88, 166, 255),
 
             // Component colors
             cpu_color: Color::Rgb(88, 166, 255),    // Blue
@@ -98,28 +88,6 @@ impl Theme {
             x if x < 90.0 => self.usage_high,
             _ => self.usage_critical,
         }
-    }
-
-    pub fn sparkline_from_data(&self, data: &[f64], width: usize) -> String {
-        let blocks = ['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-
-        if data.is_empty() {
-            return " ".repeat(width);
-        }
-
-        let max_val = data.iter().cloned().fold(f64::MIN, f64::max).max(1.0);
-        let min_val = data.iter().cloned().fold(f64::MAX, f64::min).min(0.0);
-        let range = (max_val - min_val).max(1.0);
-
-        let start = data.len().saturating_sub(width);
-        data[start..]
-            .iter()
-            .map(|&v| {
-                let normalized = ((v - min_val) / range).clamp(0.0, 1.0);
-                let idx = (normalized * 7.0) as usize;
-                blocks[idx.min(7)]
-            })
-            .collect()
     }
 
     pub fn format_bytes(&self, bytes: u64) -> String {

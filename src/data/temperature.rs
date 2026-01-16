@@ -51,10 +51,6 @@ impl TemperatureData {
         self.sensors.truncate(8);
     }
 
-    pub fn get_max_temp(&self) -> Option<f32> {
-        self.sensors.iter().map(|s| s.temperature).reduce(f32::max)
-    }
-
     pub fn get_temp_color_index(temp: f32, critical: Option<f32>) -> usize {
         let threshold = critical.unwrap_or(85.0);
         let ratio = temp / threshold;

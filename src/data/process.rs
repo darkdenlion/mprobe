@@ -16,8 +16,6 @@ pub struct ProcessInfo {
     pub memory: u64,
     pub memory_percent: f64,
     pub status: String,
-    pub user: String,
-    pub cmd: String,
 }
 
 #[derive(Default)]
@@ -82,8 +80,6 @@ impl ProcessData {
                 memory,
                 memory_percent,
                 status,
-                user: String::new(), // User info requires additional setup on some platforms
-                cmd,
             });
         }
 
