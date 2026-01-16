@@ -1,3 +1,4 @@
+mod connections;
 mod cpu;
 mod disk;
 mod header;
@@ -75,8 +76,12 @@ pub fn draw(frame: &mut Frame, app: &App) {
     disk::draw(frame, app, bottom_row[1], &theme);
     system_info::draw(frame, app, bottom_row[2], &theme);
 
-    // Processes (full width)
-    process::draw(frame, app, main_chunks[3], &theme);
+    // Bottom panel: Processes or Connections (toggle with 'c')
+    if app.show_connections {
+        connections::draw(frame, app, main_chunks[3], &theme);
+    } else {
+        process::draw(frame, app, main_chunks[3], &theme);
+    }
 
     // Draw kill confirmation dialog if active
     if let Some((pid, name, signal)) = &app.kill_confirm {
@@ -238,6 +243,7 @@ fn draw_help_screen(frame: &mut Frame, theme: &Theme) {
             ("s", "Cycle sort column"),
             ("r", "Reverse sort order"),
             ("t", "Toggle tree view"),
+            ("c", "Toggle connections view"),
             ("x", "Kill process (SIGTERM)"),
             ("X", "Force kill process (SIGKILL)"),
         ]),

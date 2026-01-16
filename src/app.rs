@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn, TemperatureData};
+use crate::data::{CpuData, DiskData, MemoryData, NetworkData, ProcessData, ProcessInfo, SortColumn, TemperatureData, BatteryData, ConnectionData};
 use sysinfo::{Signal, System};
 use std::collections::VecDeque;
 
@@ -19,6 +19,8 @@ pub struct App {
     pub network_data: NetworkData,
     pub process_data: ProcessData,
     pub temperature_data: TemperatureData,
+    pub battery_data: BatteryData,
+    pub connection_data: ConnectionData,
     pub cpu_history: VecDeque<f64>,
     pub mem_history: VecDeque<f64>,
     pub net_up_history: VecDeque<u64>,
@@ -34,11 +36,15 @@ pub struct App {
     pub os_name: String,
     pub kernel_version: String,
     pub uptime: u64,
+    // Load average (1, 5, 15 minutes)
+    pub load_avg: (f64, f64, f64),
     // Kill confirmation
     pub kill_confirm: Option<(u32, String, KillSignal)>,  // (pid, name, signal)
     pub status_message: Option<(String, std::time::Instant)>,
     // Help screen
     pub show_help: bool,
+    // View mode: false = processes, true = connections
+    pub show_connections: bool,
     // CLI options
     pub no_color: bool,
 }
@@ -60,6 +66,8 @@ impl App {
             network_data: NetworkData::default(),
             process_data: ProcessData::default(),
             temperature_data: TemperatureData::default(),
+            battery_data: BatteryData::default(),
+            connection_data: ConnectionData::default(),
             cpu_history: VecDeque::with_capacity(GRAPH_HISTORY_SIZE),
             mem_history: VecDeque::with_capacity(GRAPH_HISTORY_SIZE),
             net_up_history: VecDeque::with_capacity(GRAPH_HISTORY_SIZE),
@@ -75,9 +83,11 @@ impl App {
             os_name,
             kernel_version,
             uptime: 0,
+            load_avg: (0.0, 0.0, 0.0),
             kill_confirm: None,
             status_message: None,
             show_help: false,
+            show_connections: false,
             no_color: false,
         };
 
@@ -96,6 +106,10 @@ impl App {
     pub fn update(&mut self) {
         self.system.refresh_all();
         self.uptime = System::uptime();
+
+        // Update load average
+        let load = System::load_average();
+        self.load_avg = (load.one, load.five, load.fifteen);
 
         // Update CPU data
         self.cpu_data.update(&self.system);
@@ -117,6 +131,9 @@ impl App {
         // Update Temperature data
         self.temperature_data.update();
 
+        // Update Battery data
+        self.battery_data.update();
+
         // Update Network data
         let (up, down) = self.network_data.update(&self.system);
         if self.net_up_history.len() >= GRAPH_HISTORY_SIZE {
@@ -128,8 +145,11 @@ impl App {
         self.net_up_history.push_back(up);
         self.net_down_history.push_back(down);
 
+        // Update Connection data (less frequently - every update is fine)
+        self.connection_data.update();
+
         // Update Process data
-        self.process_data.update(&self.system, &self.filter_text, self.sort_column, self.sort_ascending);
+        self.process_data.update(&self.system, &self.filter_text, self.sort_column, self.sort_ascending, self.tree_view);
     }
 
     pub fn next_tab(&mut self) {
@@ -276,6 +296,11 @@ impl App {
     /// Toggle help screen
     pub fn toggle_help(&mut self) {
         self.show_help = !self.show_help;
+    }
+
+    /// Toggle connections view
+    pub fn toggle_connections(&mut self) {
+        self.show_connections = !self.show_connections;
     }
 
     /// Apply settings from config file

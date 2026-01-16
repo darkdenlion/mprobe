@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::data::CpuData;
 use crate::ui::Theme;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -40,7 +41,18 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
         ])
         .split(inner);
 
-    // Stats line
+    // Stats line - show usage, cores, and frequency
+    let freq_str = if app.cpu_data.frequency_min != app.cpu_data.frequency_max && app.cpu_data.frequency_max > 0 {
+        // Show range if cores have different frequencies
+        format!(
+            "{}-{}",
+            CpuData::format_frequency(app.cpu_data.frequency_min),
+            CpuData::format_frequency(app.cpu_data.frequency_max)
+        )
+    } else {
+        CpuData::format_frequency(app.cpu_data.frequency)
+    };
+
     let stats = Line::from(vec![
         Span::styled(
             format!("{:.1}%", app.cpu_data.total_usage),
@@ -48,14 +60,14 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
                 .fg(usage_color)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("  ", Style::default()),
+        Span::styled(" │ ", Style::default().fg(theme.border)),
         Span::styled(
-            format!("{} cores", app.cpu_data.core_count),
+            format!("{}c", app.cpu_data.core_count),
             Style::default().fg(theme.fg_dim),
         ),
-        Span::styled("  ", Style::default()),
+        Span::styled(" │ ", Style::default().fg(theme.border)),
         Span::styled(
-            format!("{} MHz", app.cpu_data.frequency),
+            freq_str,
             Style::default().fg(theme.fg_muted),
         ),
     ]);

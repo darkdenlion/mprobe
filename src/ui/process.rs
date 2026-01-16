@@ -27,6 +27,8 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
 
     let sort_arrow = if app.sort_ascending { "↑" } else { "↓" };
 
+    let view_mode = if app.tree_view { " [TREE]" } else { "" };
+
     let block = Block::default()
         .title(Line::from(vec![
             Span::styled(" ", Style::default()),
@@ -43,6 +45,10 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
             Span::styled(
                 format!("[{} {}]", sort_indicator, sort_arrow),
                 Style::default().fg(theme.fg_dim),
+            ),
+            Span::styled(
+                view_mode,
+                Style::default().fg(theme.success),
             ),
             Span::styled(
                 filter_indicator,
@@ -101,12 +107,21 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
             theme.fg_muted
         };
 
-        // Create name cell with highlighted filter matches
-        let name_cell = if !app.filter_text.is_empty() {
-            let name = truncate_string(&proc.name, 25);
-            Cell::from(highlight_matches(&name, &app.filter_text, theme.fg, theme.warning))
+        // Create name cell with tree indentation and/or highlighted filter matches
+        let tree_prefix = if app.tree_view && proc.depth > 0 {
+            let indent = "  ".repeat(proc.depth.min(5)); // Max 5 levels of indent
+            format!("{}└─", indent)
         } else {
-            Cell::from(truncate_string(&proc.name, 25)).style(Style::default().fg(theme.fg))
+            String::new()
+        };
+
+        let max_name_len = 25usize.saturating_sub(tree_prefix.len());
+        let display_name = format!("{}{}", tree_prefix, truncate_string(&proc.name, max_name_len));
+
+        let name_cell = if !app.filter_text.is_empty() {
+            Cell::from(highlight_matches(&display_name, &app.filter_text, theme.fg, theme.warning))
+        } else {
+            Cell::from(display_name).style(Style::default().fg(theme.fg))
         };
 
         let cells = vec![

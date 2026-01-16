@@ -1,5 +1,5 @@
 use crate::app::App;
-use crate::data::TemperatureData;
+use crate::data::{BatteryData, BatteryState, TemperatureData};
 use crate::ui::Theme;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -40,33 +40,74 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
     // Build system info lines
     let mut lines: Vec<Line> = Vec::new();
 
+    // Load Average
+    let (l1, l5, l15) = app.load_avg;
+    let load_color = if l1 > app.cpu_data.core_count as f64 {
+        theme.usage_critical
+    } else if l1 > app.cpu_data.core_count as f64 * 0.7 {
+        theme.usage_high
+    } else {
+        theme.fg_dim
+    };
+    lines.push(Line::from(vec![
+        Span::styled("Load ", Style::default().fg(theme.fg_muted)),
+        Span::styled(
+            format!("{:.2} {:.2} {:.2}", l1, l5, l15),
+            Style::default().fg(load_color),
+        ),
+    ]));
+
     // Uptime
     lines.push(Line::from(vec![
         Span::styled("Up   ", Style::default().fg(theme.fg_muted)),
         Span::styled(app.format_uptime(), Style::default().fg(theme.fg_dim)),
     ]));
 
-    // Host
-    lines.push(Line::from(vec![
-        Span::styled("Host ", Style::default().fg(theme.fg_muted)),
-        Span::styled(&app.hostname, Style::default().fg(theme.fg_dim)),
-    ]));
+    // Battery (if available)
+    if app.battery_data.has_battery {
+        if let Some(battery) = app.battery_data.batteries.first() {
+            let (icon, color) = match battery.state {
+                BatteryState::Charging => ("⚡", theme.success),
+                BatteryState::Discharging => {
+                    if battery.percentage < 20.0 {
+                        ("", theme.usage_critical)
+                    } else if battery.percentage < 50.0 {
+                        ("", theme.warning)
+                    } else {
+                        ("", theme.fg_dim)
+                    }
+                }
+                BatteryState::Full => ("✓", theme.success),
+                _ => ("", theme.fg_dim),
+            };
 
-    // Temperature sensors (show top 2 if available)
-    if !app.temperature_data.sensors.is_empty() {
-        for sensor in app.temperature_data.sensors.iter().take(2) {
-            let temp_color = get_temp_color(sensor.temperature, sensor.critical, theme);
-            let label = if sensor.label.len() > 8 {
-                format!("{}.", &sensor.label[..7])
-            } else {
-                format!("{:4}", sensor.label)
+            let time_str = match battery.state {
+                BatteryState::Discharging => battery.time_to_empty
+                    .map(|t| format!(" ({})", BatteryData::format_time(t)))
+                    .unwrap_or_default(),
+                BatteryState::Charging => battery.time_to_full
+                    .map(|t| format!(" ({})", BatteryData::format_time(t)))
+                    .unwrap_or_default(),
+                _ => String::new(),
             };
 
             lines.push(Line::from(vec![
-                Span::styled(format!("{} ", label), Style::default().fg(theme.fg_muted)),
+                Span::styled("Batt ", Style::default().fg(theme.fg_muted)),
+                Span::styled(
+                    format!("{} {:.0}%{}", icon, battery.percentage, time_str),
+                    Style::default().fg(color),
+                ),
+            ]));
+        }
+    } else {
+        // Show temperature if no battery
+        if let Some(sensor) = app.temperature_data.sensors.first() {
+            let temp_color = get_temp_color(sensor.temperature, sensor.critical, theme);
+            lines.push(Line::from(vec![
+                Span::styled("Temp ", Style::default().fg(theme.fg_muted)),
                 Span::styled(
                     format!("{:.0}°C", sensor.temperature),
-                    Style::default().fg(temp_color).add_modifier(Modifier::BOLD),
+                    Style::default().fg(temp_color),
                 ),
             ]));
         }

@@ -152,6 +152,7 @@ fn run_app(
                         KeyCode::Char('G') => app.scroll_to_bottom(),
                         KeyCode::Char('/') => app.toggle_filter_mode(),
                         KeyCode::Char('t') => app.toggle_tree_view(),
+                        KeyCode::Char('c') => app.toggle_connections(),
                         KeyCode::Char('s') => app.cycle_sort(),
                         KeyCode::Char('r') => app.toggle_sort_order(),
                         KeyCode::Char('x') => app.initiate_kill(KillSignal::Term),

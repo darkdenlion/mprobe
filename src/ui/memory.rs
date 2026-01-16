@@ -1,4 +1,5 @@
 use crate::app::App;
+use crate::data::MemoryData;
 use crate::ui::Theme;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -33,9 +34,10 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
         .margin(1)
         .constraints([
             Constraint::Length(1), // RAM stats
-            Constraint::Length(2), // RAM bar
+            Constraint::Length(1), // RAM breakdown
+            Constraint::Length(1), // RAM bar
             Constraint::Length(1), // Swap stats
-            Constraint::Length(2), // Swap bar
+            Constraint::Length(1), // Swap bar
             Constraint::Min(1),    // Graph
         ])
         .split(inner);
@@ -50,20 +52,41 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
             format!("{:.1}%", app.memory_data.used_percent),
             Style::default().fg(ram_color).add_modifier(Modifier::BOLD),
         ),
-        Span::styled("  ", Style::default()),
+        Span::styled(" │ ", Style::default().fg(theme.border)),
         Span::styled(
             format!(
                 "{} / {}",
-                theme.format_bytes(app.memory_data.used),
-                theme.format_bytes(app.memory_data.total)
+                MemoryData::format_bytes(app.memory_data.used),
+                MemoryData::format_bytes(app.memory_data.total)
             ),
             Style::default().fg(theme.fg_dim),
         ),
     ]);
     frame.render_widget(Paragraph::new(ram_stats), chunks[0]);
 
+    // RAM breakdown (available, cached)
+    let mut breakdown_spans = vec![
+        Span::styled("    ", Style::default()),
+        Span::styled("Avail ", Style::default().fg(theme.fg_muted)),
+        Span::styled(
+            MemoryData::format_bytes(app.memory_data.available),
+            Style::default().fg(theme.success),
+        ),
+    ];
+
+    if app.memory_data.cached > 0 {
+        breakdown_spans.push(Span::styled(" │ ", Style::default().fg(theme.border)));
+        breakdown_spans.push(Span::styled("Cache ", Style::default().fg(theme.fg_muted)));
+        breakdown_spans.push(Span::styled(
+            MemoryData::format_bytes(app.memory_data.cached),
+            Style::default().fg(theme.fg_dim),
+        ));
+    }
+
+    frame.render_widget(Paragraph::new(Line::from(breakdown_spans)), chunks[1]);
+
     // RAM bar
-    let bar_width = chunks[1].width.saturating_sub(2) as usize;
+    let bar_width = chunks[2].width.saturating_sub(2) as usize;
     let ram_filled = ((app.memory_data.used_percent / 100.0) * bar_width as f64) as usize;
     let ram_empty = bar_width.saturating_sub(ram_filled);
 
@@ -71,7 +94,7 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
         Span::styled("▓".repeat(ram_filled), Style::default().fg(ram_color)),
         Span::styled("░".repeat(ram_empty), Style::default().fg(theme.border)),
     ]);
-    frame.render_widget(Paragraph::new(ram_bar), chunks[1]);
+    frame.render_widget(Paragraph::new(ram_bar), chunks[2]);
 
     // Swap stats
     let swap_stats = Line::from(vec![
@@ -80,17 +103,17 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
             format!("{:.1}%", app.memory_data.swap_percent),
             Style::default().fg(swap_color).add_modifier(Modifier::BOLD),
         ),
-        Span::styled("  ", Style::default()),
+        Span::styled(" │ ", Style::default().fg(theme.border)),
         Span::styled(
             format!(
                 "{} / {}",
-                theme.format_bytes(app.memory_data.swap_used),
-                theme.format_bytes(app.memory_data.swap_total)
+                MemoryData::format_bytes(app.memory_data.swap_used),
+                MemoryData::format_bytes(app.memory_data.swap_total)
             ),
             Style::default().fg(theme.fg_dim),
         ),
     ]);
-    frame.render_widget(Paragraph::new(swap_stats), chunks[2]);
+    frame.render_widget(Paragraph::new(swap_stats), chunks[3]);
 
     // Swap bar
     let swap_filled = ((app.memory_data.swap_percent / 100.0) * bar_width as f64) as usize;
@@ -100,7 +123,7 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
         Span::styled("▓".repeat(swap_filled), Style::default().fg(theme.swap_color)),
         Span::styled("░".repeat(swap_empty), Style::default().fg(theme.border)),
     ]);
-    frame.render_widget(Paragraph::new(swap_bar), chunks[3]);
+    frame.render_widget(Paragraph::new(swap_bar), chunks[4]);
 
     // Mini graph
     let data: Vec<(f64, f64)> = app
@@ -110,7 +133,7 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
         .map(|(i, &v)| (i as f64, v))
         .collect();
 
-    if chunks[4].height >= 2 {
+    if chunks[5].height >= 2 {
         let dataset = Dataset::default()
             .marker(Marker::Braille)
             .graph_type(GraphType::Line)
@@ -130,6 +153,6 @@ pub fn draw(frame: &mut Frame, app: &App, area: Rect, theme: &Theme) {
             )
             .style(Style::default().bg(theme.bg_secondary));
 
-        frame.render_widget(chart, chunks[4]);
+        frame.render_widget(chart, chunks[5]);
     }
 }
